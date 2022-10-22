@@ -1,0 +1,1 @@
+# Yomichan Frequency
