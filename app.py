@@ -1,15 +1,10 @@
 from pathlib import Path
 import pandas as pd
 import json
-
-CHUNK_SIZE = 40_000
-LIMIT = 200_000
-
-VER = 1
-DICT_TITLE = "freq"
-REVISION = "frequency1"
-
-# OUTPUT_DIR = Path("dict")
+import argparse
+import csv
+import shutil
+import sys
 
 def die(msg):
     print(msg)
@@ -27,47 +22,90 @@ cli.add_argument('-o',
                 '--output',
                 nargs = "+",
                 metavar='path',
-                help='path to the output yomichan frequency dictionary',
+                help='directory where output dictionary is stored',
                 required=True)
+cli.add_argument("-n",
+                "--name",
+                metavar="name",
+                help="custom name for dictionary")
+cli.add_argument("-r",
+                "--revision",
+                metavar="revision",
+                help="custom revision name for metadata - default: freq")
+cli.add_argument("-l",
+                "--limit",
+                metavar="limit",
+                help="limit number of entries in dictionary - default: 100,000",
+                const=100_000,
+                type=int)
+cli.add_argument("-c",
+                "--chunksize",
+                metavar="chunksize",
+                help="custom size for each chunk during processing: default: 10,000 ",
+                const=10_0000,
+                type=int)
 
 args = cli.parse_args()
 
 input_file = Path(args.input)
-output_file = Path(args.output)
+root_dir = Path(args.output)
+name = args.name or input_file.name
+chunksize = args.chunksize
+limit = args.limit
+revision = args.revision
 
-if not input_file.exists() or input_file.exists():
+if not input_file.exists():
     die('Invalid path to frequency file')
+if not root_dir.exists():
+    root_dir = input_file.parent
 
-header = {"title": DICT_TITLE, "format": VER, "revision": REVISION}
+output_dir = root_dir / name
+output_dir.mkdir(exist_ok=True)
 
-curr = 1
+def get_delimiter(file_path, bytes = 4096):
+    sniffer = csv.Sniffer()
+    data = open(file_path, "r").read(bytes)
+    delimiter = sniffer.sniff(data).delimiter
+    return delimiter
 
-def output_term_bank(df, num):
-    global curr
-    output_file = OUTPUT_DIR / f"term_meta_bank_{num}.json"
+def output_term_bank(df, num, prev_total = 0):
+    output_file = output_dir / f"term_meta_bank_{num}.json"
 
     df = df.reset_index() 
 
     data = []
-    for index, row in df.iterrows():
+    processed = 0
+    for _, row in df.iterrows():
+        processed += 1
         entry = [row["word"], "freq", curr]
         data.append(entry)
-        curr += 1
+        if prev_total + processed >= limit: 
+            break
 
     with open(output_file, mode="w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
+    
+    return processed
 
 def create_header():
-    output_file = OUTPUT_DIR / "index.json"
+    # dict metadata
+    header = {"title": name, "format": 3, "revision": revision}
+    output_file = output_dir / "index.json"
     output_file.write_text(json.dumps(header))
 
-data = pd.read_csv(input_file, sep="\t", header = None, chunksize=CHUNK_SIZE)
-
+print("Created dictionary metadata...")
 create_header()
 
+print("Loading input frequency file...")
+data = pd.read_csv(input_file, sep=get_delimiter(input_file), header = None, chunksize=chunksize)
+curr = 1
 for index, chunk in enumerate(data):
     chunk.columns = ["word", "frequency"]
-    output_term_bank(chunk, index + 1)
-
-    if curr >= LIMIT:
+    curr += output_term_bank(chunk, index + 1, curr)
+    if curr >= limit:
         break
+
+print(f"Processed {curr} entries")
+print("Building archive...")
+shutil.make_archive(name, "zip", root_dir)
+print("Success!")
