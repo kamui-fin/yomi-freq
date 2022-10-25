@@ -26,10 +26,10 @@ The default output directory is the current directory.
 
 Additional options include:
 
-- `--name`: custom name for dictionary (default: input file name)
-- `--revision`: custom revision name for metadata (default: freq)
-- `--limit`: limit number of entries in dictionary (default: 100,000)
-- `--chunksize`: custom size for each chunk during processing: (default 10,000)
+-   `--name`: custom name for dictionary (default: input file name)
+-   `--revision`: custom revision name for metadata (default: freq)
+-   `--limit`: limit number of entries in dictionary (default: no limit)
+-   `--chunksize`: custom size for each chunk during processing: (default 10,000)
 
 ### Format
 

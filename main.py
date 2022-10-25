@@ -1,3 +1,5 @@
+# TODO: combiner script, smarter parsing, filtering garbage out
+
 from pathlib import Path
 import pandas as pd
 import json
@@ -30,7 +32,7 @@ cli.add_argument("-r",
                 default="freq")
 cli.add_argument("-l",
                 "--limit",
-                help="limit number of entries in dictionary - default: 100,000",
+                help="limit number of entries in dictionary - default: None",
                 default=100_000,
                 type=int)
 cli.add_argument("-c",
@@ -52,6 +54,11 @@ if not input_file.exists():
     die('Invalid path to frequency file')
 if not root_dir.exists():
     root_dir = input_file.parent
+if not chunksize:
+    if limit:
+        chunksize = limit // 10
+    else:
+        chunksize = 10_000
 
 output_dir = root_dir / name
 output_dir.mkdir(exist_ok=True)
@@ -73,7 +80,7 @@ def output_term_bank(df, num, prev_total = 0):
         processed += 1
         entry = [row["word"], "freq", curr]
         data.append(entry)
-        if prev_total + processed >= limit: 
+        if limit and prev_total + processed >= limit: 
             break
 
     with open(output_file, mode="w", encoding="utf-8") as f:
@@ -87,7 +94,7 @@ def create_header():
     output_file = output_dir / "index.json"
     output_file.write_text(json.dumps(header))
 
-print("Created dictionary metadata...")
+print("Creating dictionary metadata...")
 create_header()
 
 print("Loading input frequency file...")
@@ -96,12 +103,12 @@ curr = 1
 for index, chunk in enumerate(data):
     chunk.columns = ["word", "frequency"]
     curr += output_term_bank(chunk, index + 1, curr)
-    if curr >= limit:
+    if limit and curr >= limit:
         break
 
-print(f"Processed {curr} entries")
+print(f"Processed {curr} entries.")
 print("Building archive...")
 shutil.make_archive(str(root_dir / name), 'zip', output_dir)
-shutil.rmtree(output_dir)
 print("Cleaning up...")
-print("Success!")
+shutil.rmtree(output_dir)
+print("Done!")
