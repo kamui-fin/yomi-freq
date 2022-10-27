@@ -19,27 +19,33 @@ pip install -r requirements.txt
 The basic usage of `yomi-freq` is by supplying an input list file and output directory:
 
 ```
-python main.py -i [path] -o [path]
+python main.py -i [paths...] -name [name]
 ```
-
-The default output directory is the current directory.
 
 Additional options include:
 
--   `--name`: custom name for dictionary (default: input file name)
--   `--revision`: custom revision name for metadata (default: freq)
--   `--limit`: limit number of entries in dictionary (default: no limit)
--   `--chunksize`: custom size for each chunk during processing: (default 10,000)
+- `--output`: directory where the output dictionary is stored (default: `.`)
+- `--revision`: custom revision name for metadata (default: freq)
+- `--limit`: limit number of entries in dictionary (default: no limit)
+- `--chunksize`: custom size for each chunk during processing: (default 10,000)
+
+Multiple lists can be combined into a single yomichan frequency list by passing in multiple paths to `-i`. Frequency values are calculated using `mean` and rounded.
 
 ### Format
 
-The frequency list must be structured in the following way:
+The script expects some sort of list or csv-like file where each line starts with a single word, followed by a delimiter. For example, the following structure is accepted:
 
 ```
 [word][delimiter][frequency]
 ```
 
-The `delimiter` character is up to you but optimally it's either a comma or tab. `frequency` can either mean the number of times it appeared in the corpus or the "rank", in the sense that the lower the number, the higher the frequency. Either way is accepted, the only important part is the structure.
+So is:
+
+```
+[word]
+```
+
+The `delimiter` character is up to you but optimally it's either a comma or tab. Only the `word` column will be read in the existing order to determine the resulting frequency "ranking", in the sense that the smaller the value, the more frequenct the word is.
 
 ### Example
 
