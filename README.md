@@ -1,7 +1,7 @@
 # Yomichan Frequency List Generator
 
 Often times, it can be helpful to look at the frequency of a word as you're looking it up.
-<img src="yomichan.png" alt="drawing" width="250" />
+<img src="img/yomichan.png" alt="drawing" width="350" />
 
 The goal of `yomi-freq` is to make this efficient workflow more widely accessible by allowing the user to generate their own Yomichan frequency list dictionaries.
 
