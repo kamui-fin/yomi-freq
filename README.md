@@ -49,7 +49,7 @@ The `delimiter` character is up to you but optimally it's either a comma or tab.
 
 ### Example
 
-![](./demo.png)
+![](./img/demo.png)
 
 `freq.zip` is the output Yomichan dictionary file and can be directly imported now.
 
